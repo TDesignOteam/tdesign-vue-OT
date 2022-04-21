@@ -757,6 +757,8 @@ export default mixins(getConfigReceiverMixins<Vue, SelectConfig>('select')).exte
     } = this;
     const prefixIconSlot = renderTNodeJSX(this, 'prefixIcon');
     const placeholderText = this.getPlaceholderText();
+    const isValueDisplay = this.valueDisplay || this.$scopedSlots.valueDisplay;
+
     return (
       <div ref="select" class={`${name}__wrap`}>
         <Popup
@@ -775,7 +777,7 @@ export default mixins(getConfigReceiverMixins<Vue, SelectConfig>('select')).exte
           >
             {prefixIconSlot && <span class={`${name}__left-icon`}>{prefixIconSlot[0]}</span>}
             {showPlaceholder && <span class={`${name}__placeholder`}> {placeholderText}</span>}
-            {this.valueDisplay || this.$scopedSlots.valueDisplay
+            {this.multiple && isValueDisplay
               ? renderTNodeJSX(this, 'valueDisplay', {
                 params: { value: selectedMultiple, onClose: (index: number) => this.removeTag(index) },
               })
@@ -807,11 +809,16 @@ export default mixins(getConfigReceiverMixins<Vue, SelectConfig>('select')).exte
                 {`+${selectedMultiple.length - this.minCollapsedNum}`}
               </tag>
             )}
-            {!multiple && !showPlaceholder && !showFilter && (
-              <span title={selectedSingle} class={`${name}__single`}>
-                {selectedSingle}
-              </span>
-            )}
+            {!multiple
+              && !showPlaceholder
+              && !showFilter
+              && (isValueDisplay ? (
+                renderTNodeJSX(this, 'valueDisplay', {
+                  params: { value: selectedSingle },
+                })
+              ) : (
+                <span class={`${name}__single`}>{selectedSingle}</span>
+              ))}
             {showFilter && (
               <t-input
                 ref="input"
