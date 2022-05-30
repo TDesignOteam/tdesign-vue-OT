@@ -18,15 +18,16 @@ export default function useColumnResize(tableElmRef: Ref<HTMLTableElement>, refr
 
   // 表格列宽拖拽事件
   // 只在表头显示拖拽图标
-  const onColumnMouseover = (e: MouseEvent) => {
+  const onColumnMouseover = (e: MouseEvent, col: BaseTableColumns[0]) => {
     if (!resizeLineRef.value) return;
 
+    const minColLen = col.minResizeWidth || 30;
     const target = (e.target as HTMLElement).closest('th');
     const targetBoundRect = target.getBoundingClientRect();
     if (!resizeLineParams.isDragging) {
-      // 最小宽度暂定为30，如果单元格小于30，则不能拖拽
+      // 最小宽度暂定为minWidth，如果单元格小于minWidth，则不能拖拽
       // 当离右边框的距离不超过8时，显示拖拽图标
-      if (targetBoundRect.width >= 30 && targetBoundRect.right - e.pageX <= 8) {
+      if (targetBoundRect.width >= minColLen && targetBoundRect.right - e.pageX <= 8) {
         target.style.cursor = 'col-resize';
         resizeLineParams.draggingCol = target;
       } else {
@@ -46,7 +47,7 @@ export default function useColumnResize(tableElmRef: Ref<HTMLTableElement>, refr
     const tableBoundRect = tableElmRef.value?.getBoundingClientRect();
     const resizeLinePos = targetBoundRect.right - tableBoundRect.left;
     const colLeft = targetBoundRect.left - tableBoundRect.left;
-    const minColLen = 30;
+    const minColLen = col?.minResizeWidth || 30;
     const minResizeLineLeft = colLeft + minColLen;
 
     // 开始拖拽，记录下鼠标起始位置

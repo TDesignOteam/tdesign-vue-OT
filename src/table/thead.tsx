@@ -118,7 +118,7 @@ export default defineComponent({
           const resizeColumnListener = this.allowResizeColumnWidth
             ? {
               mousedown: (e: MouseEvent) => this.onColumnMousedown(e, col),
-              mousemove: (e: MouseEvent) => this.onColumnMouseover(e),
+              mousemove: (e: MouseEvent) => this.onColumnMouseover(e, col),
             }
             : {};
           const content = isFunction(col.ellipsisTitle) ? col.ellipsisTitle(h, { col, colIndex: index }) : undefined;

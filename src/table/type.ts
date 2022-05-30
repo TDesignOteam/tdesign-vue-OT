@@ -272,6 +272,10 @@ export interface BaseTableCol<T extends TableRowData = TableRowData> {
    * 列宽，可以作为最小宽度使用。当列宽总和小于 `table` 元素时，浏览器根据宽度设置情况自动分配宽度；当列宽总和大于 `table` 元素，表现为定宽。可以同时调整 `table` 元素的宽度来达到自己想要的效果
    */
   width?: string | number;
+  /**
+   * 自定义拖动最小列宽, 默认是30
+   */
+  minResizeWidth?: string | number;
 }
 
 export interface TdPrimaryTableProps<T extends TableRowData = TableRowData>

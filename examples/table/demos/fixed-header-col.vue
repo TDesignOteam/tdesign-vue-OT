@@ -74,6 +74,7 @@ export default {
           title: '序号',
           fixed: 'left',
           foot: '总述',
+          minResizeWidth: 50,
         },
         {
           colKey: 'platform',
@@ -117,6 +118,7 @@ export default {
           width: 100,
           cell: 'operation',
           fixed: 'right',
+          minResizeWidth: 100,
         },
       ],
     };
