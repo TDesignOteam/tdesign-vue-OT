@@ -11,6 +11,8 @@ export default function useColumnResize(tableContentRef: Ref<HTMLDivElement>, re
     isDragging: false,
     draggingCol: null as HTMLElement,
     draggingStart: 0,
+    isPreview: false,
+    scale: 1,
   };
 
   const resizeLineStyle = reactive({
@@ -18,27 +20,47 @@ export default function useColumnResize(tableContentRef: Ref<HTMLDivElement>, re
     height: '10px',
     left: '10px',
     bottom: '0',
+    cursor: 'col-resize',
   });
 
   // 表格列宽拖拽事件
   // 只在表头显示拖拽图标
-  const onColumnMouseover = (e: MouseEvent, col: BaseTableCol<TableRowData>) => {
+  const onColumnMouseover = (
+    e: MouseEvent,
+    col: BaseTableCol<TableRowData>,
+    previewCol: BaseTableCol<TableRowData>,
+  ) => {
     if (!resizeLineRef.value) return;
 
     const target = (e.target as HTMLElement).closest('th');
     const targetBoundRect = target.getBoundingClientRect();
+
+    const targetSibling: HTMLElement = target.previousElementSibling as HTMLElement;
+    let previewBoundRect;
+    if (targetSibling && targetSibling.tagName === 'TH') {
+      previewBoundRect = targetSibling.getBoundingClientRect();
+    }
+
     if (!resizeLineParams.isDragging) {
-      const minWidth = col.resize?.minWidth || DEFAULT_MIN_WIDTH;
-      const maxWidth = col.resize?.maxWidth || DEFAULT_MAX_WIDTH;
-      // 当离右边框的距离不超过 8 时，显示拖拽图标
+      // 当离边框中间的距离不超过 8 时，显示拖拽图标
       const distance = 8;
-      if (
-        targetBoundRect.width >= minWidth
-        && targetBoundRect.width <= maxWidth
-        && targetBoundRect.right - e.pageX <= distance
-      ) {
+      const isTargetDistance = targetBoundRect.right - e.pageX <= distance;
+      const isPreviewDistance = previewBoundRect && e.pageX - previewBoundRect.right <= distance && e.pageX - previewBoundRect.right >= -1;
+      resizeLineParams.isPreview = isPreviewDistance;
+
+      const draggingTarget = isPreviewDistance ? previewBoundRect : targetBoundRect;
+      const currentCol = isPreviewDistance ? previewCol : col;
+
+      const minWidth = currentCol.resize?.minWidth || DEFAULT_MIN_WIDTH;
+      const maxWidth = currentCol.resize?.maxWidth || DEFAULT_MAX_WIDTH;
+
+      const currentWidth = parseInt(`${currentCol.width}`, 10);
+      const scale = isNaN(currentWidth) ? 1 : draggingTarget.width / currentWidth;
+      resizeLineParams.scale = scale;
+
+      if (minWidth < maxWidth && (isTargetDistance || isPreviewDistance)) {
         target.style.cursor = 'col-resize';
-        resizeLineParams.draggingCol = target;
+        resizeLineParams.draggingCol = isTargetDistance ? target : targetSibling;
       } else {
         target.style.cursor = '';
         resizeLineParams.draggingCol = null;
@@ -47,17 +69,22 @@ export default function useColumnResize(tableContentRef: Ref<HTMLDivElement>, re
   };
 
   // 调整表格列宽
-  const onColumnMousedown = (e: MouseEvent, col: BaseTableCol<TableRowData>) => {
+  const onColumnMousedown = (
+    e: MouseEvent,
+    col: BaseTableCol<TableRowData>,
+    previewCol: BaseTableCol<TableRowData>,
+  ) => {
     // 非 resize 的点击，不做处理
     if (!resizeLineParams.draggingCol) return;
 
-    const target = (e.target as HTMLElement).closest('th');
+    const target = resizeLineParams.draggingCol as HTMLElement;
     const targetBoundRect = target.getBoundingClientRect();
     const tableBoundRect = tableContentRef.value?.getBoundingClientRect();
     const resizeLinePos = targetBoundRect.right - tableBoundRect.left;
     const colLeft = targetBoundRect.left - tableBoundRect.left;
-    const minColWidth = col.resize?.minWidth || DEFAULT_MIN_WIDTH;
-    const maxColWidth = col.resize?.maxWidth || DEFAULT_MAX_WIDTH;
+    const currentCol = resizeLineParams.isPreview ? previewCol : col;
+    const minColWidth = currentCol.resize?.minWidth || DEFAULT_MIN_WIDTH;
+    const maxColWidth = currentCol.resize?.maxWidth || DEFAULT_MAX_WIDTH;
     const minResizeLineLeft = colLeft + minColWidth;
     const maxResizeLineLeft = colLeft + maxColWidth;
 
@@ -78,15 +105,10 @@ export default function useColumnResize(tableContentRef: Ref<HTMLDivElement>, re
     const onDragEnd = () => {
       if (resizeLineParams.isDragging) {
         // 结束拖拽，更新列宽
-        let width = Math.ceil(parseInt(resizeLineStyle.left, 10) - colLeft) || 0;
-        // 为了避免精度问题，导致 width 宽度超出 [minColWidth, maxColWidth] 的范围，需要对比目标宽度和最小/最大宽度
-        if (width <= minColWidth) {
-          width = minColWidth;
-        } else if (width >= maxColWidth) {
-          width = maxColWidth;
-        }
+        const width = (parseInt(resizeLineStyle.left, 10) - colLeft) / resizeLineParams.scale;
+
         // eslint-disable-next-line
-        col.width = `${width}px`;
+        currentCol.width = `${Math.floor(width)}px`;
 
         // 恢复设置
         resizeLineParams.isDragging = false;
