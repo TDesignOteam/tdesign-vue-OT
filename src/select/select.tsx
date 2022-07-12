@@ -801,6 +801,8 @@ export default defineComponent({
             realLabel={realLabel}
             realValue={realValue}
             scroll={scroll}
+            panelTopContent={this.panelTopContent}
+            panelBottomContent={this.panelBottomContent}
           />
         </SelectInput>
       </div>
